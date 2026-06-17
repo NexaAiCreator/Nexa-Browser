@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Nexa Settings</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #1a1a1a; color: white; padding: 30px; }
+        .setting-row { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid #333; }
+        input, select { background: #333; color: white; border: 1px solid #555; padding: 5px; border-radius: 4px; }
+        h1 { color: #4a90e2; }
+    </style>
+</head>
+<body>
+    <h1>Browser Settings</h1>
+    <div id="settings-container"></div>
+
+    <script src="nexabridge.js"></script>
+    <script>
+        async function initSettings() {
+            const settings = await window.Nexa.call('db.getSettings');
+            const container = document.getElementById('settings-container');
+            
+            for (const [key, value] of Object.entries(settings)) {
+                const row = document.createElement('div');
+                row.className = 'setting-row';
+                row.innerHTML = `
+                    <span>${key.replace('_', ' ').toUpperCase()}</span>
+                    <input type="text" value="${value}" onchange="updateSet('${key}', this.value)">
+                `;
+                container.appendChild(row);
+            }
+        }
+
+        async function updateSet(key, value) {
+            await window.Nexa.call('db.updateSetting', key, value);
+            console.log(`Updated ${key} to ${value}`);
+        }
+
+        initSettings();
+    </script>
+</body>
+</html>

@@ -1,0 +1,15 @@
+{
+  "name": "nexa-browser",
+  "version": "0.1.0",
+  "description": "Nexa Browser - Sovereign AI Browser",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "devDependencies": {
+    "electron": "^35.5.1"
+  },
+  "dependencies": {
+    "axios": "^1.18.0"
+  }
+}

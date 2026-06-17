@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html style="height: 100%; overflow: hidden;">
+<head>
+    <style>
+        :root {
+            --bg-dark: #050506;
+            --accent: #8ab4f8;
+            --accent-glow: rgba(138, 180, 248, 0.4);
+            --text-main: #e8eaed;
+            --text-dim: #9aa0a6;
+            --glass-bg: rgba(20, 20, 22, 0.8);
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+        body {
+            margin: 0; padding: 0;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Segoe UI', Roboto, sans-serif;
+            height: 100vh; display: flex; justify-content: center; align-items: center;
+            overflow: hidden;
+        }
+        #canvas {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 1; pointer-events: none;
+        }
+        .login-card {
+            position: relative; z-index: 10;
+            width: 380px; background: var(--glass-bg);
+            backdrop-filter: blur(25px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px; padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.7);
+            text-align: center;
+            animation: slideUp 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(40px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .logo-orb {
+            width: 60px; height: 60px; background: var(--accent);
+            border-radius: 50%; margin: 0 auto 20px;
+            box-shadow: 0 0 30px var(--accent);
+            animation: pulse 3s infinite ease-in-out;
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); box-shadow: 0 0 20px var(--accent); }
+            50% { transform: scale(1.1); box-shadow: 0 0 40px var(--accent); }
+        }
+        h1 { font-size: 24px; margin-bottom: 8px; letter-spacing: 1px; }
+        p { color: var(--text-dim); font-size: 14px; margin-bottom: 30px; }
+        .input-group { margin-bottom: 20px; text-align: left; }
+        label { display: block; font-size: 12px; color: var(--text-dim); margin-bottom: 8px; margin-left: 4px; }
+        input {
+            width: 100%; background: rgba(255,255,255,0.05);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px; padding: 12px 15px;
+            color: white; font-size: 15px; outline: none;
+            box-sizing: border-box; transition: all 0.3s;
+        }
+        input:focus { border-color: var(--accent); background: rgba(255,255,255,0.1); box-shadow: 0 0 10px var(--accent-glow); }
+        .btn-login {
+            width: 100%; padding: 14px; border-radius: 12px;
+            background: var(--accent); color: #000;
+            border: none; font-weight: bold; font-size: 16px;
+            cursor: pointer; transition: all 0.3s;
+        }
+        .btn-login:hover { transform: translateY(-2px); box-shadow: 0 5px 15px var(--accent-glow); }
+        #error-msg { color: #ff4444; font-size: 13px; margin-top: 15px; display: none; }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    <div class="login-card">
+        <div class="logo-orb"></div>
+        <h1>Welcome to NEXA</h1>
+        <p>Sign in to your Sovereign account</p>
+        <div class="input-group">
+            <label>EMAIL</label>
+            <input type="email" id="email" placeholder="email@nexa.ai">
+        </div>
+        <div class="input-group">
+            <label>PASSWORD</label>
+            <input type="password" id="pass" placeholder="••••••••">
+        </div>
+        <button class="btn-login" onclick="handleLogin()">Sovereign Login</button>
+        <div id="error-msg"></div>
+    </div>
+
+    <script src="nexabridge.js"></script>
+    <script>
+        // Simple fallback login that doesn't depend on Appwrite for now
+        window.Nexa = window.Nexa || {};
+        
+        if (!window.Nexa.login) {
+            window.Nexa.login = async (email, password) => {
+                console.log("Using fallback login (Appwrite integration disabled)");
+                // Mock login for testing - replace with actual Appwrite integration
+                return { 
+                    success: true, 
+                    user: { 
+                        $id: 'mock-user-id', 
+                        email: email, 
+                        name: email.split('@')[0] 
+                    } 
+                };
+            };
+        }
+        
+        console.log("Nexa Bridge initialized:", typeof window.Nexa);
+    </script>
+
+        async function handleLogin() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('pass').value;
+            const errorDiv = document.getElementById('error-msg');
+            
+            if(!email || !password) return;
+
+            try {
+                console.log("Attempting login...");
+                console.log("window.Nexa:", window.Nexa);
+                console.log("typeof window.Nexa:", typeof window.Nexa);
+                
+                if (!window.Nexa) {
+                    throw new Error("Nexa Bridge not loaded. Please refresh the page.");
+                }
+                
+                if (typeof window.Nexa.login !== 'function') {
+                    throw new Error("Nexa login function not available.");
+                }
+                
+                const result = await window.Nexa.login(email, password);
+                console.log("Login result:", result);
+                
+                if (result.success) {
+                    errorDiv.style.display = 'none';
+                    if (typeof window.Nexa.call === 'function') {
+                        window.Nexa.call('auth.sessionStarted', result.user);
+                    }
+                    window.close();
+                } else {
+                    errorDiv.innerText = result.error || "Login failed";
+                    errorDiv.style.display = 'block';
+                }
+            } catch (e) {
+                console.error("Login error:", e);
+                errorDiv.innerText = e.message || "Authentication failed";
+                errorDiv.style.display = 'block';
+            }
+        }
+
+        // Prevent form submission
+        document.addEventListener('DOMContentLoaded', () => {
+            const loginBtn = document.querySelector('.btn-login');
+            if (loginBtn) {
+                loginBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    handleLogin();
+                });
+            }
+        });
+
+        // Neural Background
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+        function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+        window.onresize = resize; resize();
+        class P {
+            constructor() { this.x = Math.random()*canvas.width; this.y = Math.random()*canvas.height; 
+            this.vx = (Math.random()-0.5)*0.5; this.vy = (Math.random()-0.5)*0.5; }
+            update() { this.x += this.vx; this.y += this.vy; if(this.x<0||this.x>canvas.width)this.vx*=-1; if(this.y<0||this.y>canvas.height)this.vy*=-1; }
+        }
+        for(let i=0; i<60; i++) particles.push(new P());
+        function anim() {
+            ctx.clearRect(0,0,canvas.width,canvas.height);
+            ctx.fillStyle = 'rgba(138, 180, 248, 0.3)';
+            particles.forEach(p => {
+                p.update(); ctx.beginPath(); ctx.arc(p.x,p.y,1,0,Math.PI*2); ctx.fill();
+            });
+            requestAnimationFrame(anim);
+        }
+        anim();
+    </script>
+</body>
+</html>

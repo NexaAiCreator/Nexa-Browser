@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html style="height: 100%; overflow: hidden;">
+<head>
+    <style>
+        :root {
+            --bg-dark: #0f0f10; --bg-medium: #1c1c1e; --bg-light: #2c2c2e;
+            --accent: #8ab4f8; --text-main: #e8eaed; --text-dim: #9aa0a6;
+            --glass-bg: rgba(15, 15, 16, 0.75); --glass-border: rgba(255, 255, 255, 0.08);
+            --blur: blur(20px);
+            --nexa-grad: linear-gradient(135deg, #8ab4f8 0%, #c3daff 100%);
+        }
+        body { 
+            margin: 0; padding: 0; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
+            background: var(--bg-dark); color: var(--text-main); user-select: none; overflow: hidden;
+            height: 100vh; display: flex; flex-direction: column;
+        }
+        .tab-container {
+            display: flex; align-items: center; padding: 8px 12px 0 12px; gap: 6px;
+            height: 42px; background: var(--glass-bg); backdrop-filter: var(--blur);
+            border-bottom: 1px solid var(--glass-border); z-index: 10;
+        }
+        .tab-strip { display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; }
+        .tab {
+            display: flex; align-items: center; padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.05); border-radius: 10px 10px 0 0;
+            font-size: 12px; color: var(--text-dim); cursor: pointer;
+            min-width: 140px; max-width: 220px; transition: all 0.3s ease;
+            border: 1px solid transparent; border-bottom: none;
+        }
+        .tab.active { background: var(--bg-medium); color: var(--text-main); border-bottom: 2px solid var(--accent); }
+        .add-tab-btn {
+            width: 26px; height: 26px; border-radius: 50%; background: transparent; 
+            color: var(--text-dim); border: none; cursor: pointer; margin-left: 10px; 
+            font-size: 18px; display: flex; align-items: center; justify-content: center;
+        }
+        .toolbar { 
+            display: flex; align-items: center; padding: 6px 12px; gap: 12px;
+            background: var(--glass-bg); backdrop-filter: var(--blur);
+            border-bottom: 1px solid var(--glass-border); height: 48px; z-index: 10;
+        }
+        .nav-btn { 
+            width: 32px; height: 32px; border-radius: 50%; background: rgba(255, 255, 255, 0.08); 
+            color: var(--text-main); border: none; cursor: pointer; display: flex; 
+            align-items: center; justify-content: center; transition: all 0.2s;
+        }
+        .nav-btn:hover { background: rgba(255, 255, 255, 0.2); transform: scale(1.1); }
+        .omnibox-container { 
+            flex: 1; background: rgba(0, 0, 0, 0.2); border-radius: 12px; 
+            padding: 6px 16px; display: flex; align-items: center;
+            border: 1px solid var(--glass-border); 
+        }
+        #url-input { width: 100%; background: transparent; border: none; color: var(--text-main); font-size: 13px; outline: none; }
+        .utility-bar { display: flex; align-items: center; gap: 12px; padding-right: 10px; }
+        .util-icon {
+            width: 28px; height: 28px; background: transparent;
+            cursor: pointer; display: flex; align-items: center; justify-content: center;
+            transition: all 0.2s; position: relative;
+        }
+        .util-icon img { width: 18px; height: 18px; filter: invert(1); opacity: 0.7; transition: all 0.2s; }
+        .util-icon:hover img { opacity: 1; transform: scale(1.1); }
+        .divider { width: 1px; height: 20px; background: var(--glass-border); }
+        .profile-icon {
+            width: 28px; height: 28px; border-radius: 50%;
+            background: linear-gradient(45deg, #4285f4, #8ab4f8);
+            border: 1px solid var(--glass-border); cursor: pointer;
+        }
+        .nexa-ai-btn {
+            background: var(--nexa-grad); color: #000; font-weight: 800;
+            font-size: 12px; letter-spacing: 1px; padding: 6px 18px;
+            border-radius: 20px; border: none; cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 0 15px rgba(138, 180, 248, 0.4);
+            animation: nexaPulse 3s infinite ease-in-out;
+            display: flex; align-items: center; justify-content: center;
+            text-transform: uppercase;
+        }
+        @keyframes nexaPulse {
+            0%, 100% { box-shadow: 0 0 10px rgba(138, 180, 248, 0.4); }
+            50% { box-shadow: 0 0 25px var(--accent); }
+        }
+        .auth-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(5, 5, 6, 0.85); backdrop-filter: blur(20px);
+            z-index: 10000; display: none; justify-content: center; align-items: center;
+        }
+        .login-card {
+            width: 380px; background: rgba(20, 20, 22, 0.9);
+            border: 1px solid var(--glass-border); border-radius: 24px; padding: 40px;
+            text-align: center; color: white;
+        }
+        .login-orb {
+            width: 50px; height: 50px; background: var(--accent);
+            border-radius: 50%; margin: 0 auto 20px; box-shadow: 0 0 20px var(--accent);
+        }
+        .input-group { margin-bottom: 15px; text-align: left; }
+        .input-group label { display: block; font-size: 11px; color: var(--text-dim); margin-bottom: 5px; }
+        .input-group input {
+            width: 100%; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border);
+            border-radius: 10px; padding: 12px; color: white; outline: none; box-sizing: border-box;
+        }
+        .btn-login {
+            width: 100%; padding: 12px; border-radius: 10px;
+            background: var(--accent); color: #000; border: none; font-weight: bold; cursor: pointer;
+        }
+        #login-error { color: #ff4444; font-size: 12px; margin-top: 10px; display: none; }
+        .viewport { flex: 1; display: flex; overflow: hidden; background: #fff; position: relative; }
+        #main-browser { flex: 1; height: 100%; border: none; }
+        #ai-sidebar { width: 300px; height: 100%; border-left: 1px solid var(--glass-border); 
+            background: var(--bg-dark); backdrop-filter: var(--blur); transition: width 0.3s; 
+        }
+        .hidden { display: none; }
+        .menu-popup {
+            position: fixed; top: 90px; right: 10px; width: 260px; 
+            background: rgba(25, 25, 27, 0.95); backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border); border-radius: 12px; padding: 8px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5); display: none; z-index: 999999 !important;
+            font-size: 13px; animation: menuSlide 0.2s ease-out;
+        }
+        @keyframes menuSlide { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        .menu-section { display: flex; flex-direction: column; gap: 2px; }
+        .menu-item {
+            display: flex; align-items: center; padding: 8px 12px;
+            border-radius: 8px; cursor: pointer; transition: all 0.2s;
+            color: var(--text-main); gap: 12px;
+        }
+        .menu-item:hover { background: rgba(255, 255, 255, 0.1); }
+        .menu-item img { width: 16px; height: 16px; filter: invert(1); opacity: 0.8; }
+        .menu-item span { flex: 1; }
+        .menu-item small { color: var(--text-dim); font-size: 11px; }
+        .menu-divider { height: 1px; background: var(--glass-border); margin: 8px 0; }
+        .menu-item.exit { color: #ff4444; }
+        .profile-popup {
+            position: fixed; top: 90px; right: 10px; width: 280px; 
+            background: rgba(20, 20, 22, 0.95); backdrop-filter: blur(30px);
+            border: 1px solid var(--glass-border); border-radius: 16px; padding: 0;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.6); display: none; z-index: 999999 !important;
+            font-size: 13px; animation: menuSlide 0.2s ease-out; overflow: hidden;
+        }
+        .profile-header {
+            background: linear-gradient(135deg, #1a1a1c 0%, #0f0f10 100%);
+            padding: 20px; display: flex; align-items: center; gap: 15px;
+            border-bottom: 1px solid var(--glass-border);
+        }
+        .profile-avatar-large {
+            width: 48px; height: 48px; border-radius: 50%;
+            background: var(--accent); border: 2px solid white;
+        }
+        .p-name { font-weight: bold; font-size: 15px; color: white; }
+        .p-email { font-size: 12px; color: var(--text-dim); }
+        .menu-header { 
+            padding: 12px 12px 8px; font-size: 11px; 
+            color: #c5a059; text-transform: uppercase; font-weight: bold; 
+        }
+        .mini-avatar {
+            width: 16px; height: 16px; border-radius: 50%;
+            background: #555; margin-right: 10px;
+        }
+        .chevron { margin-left: auto; color: var(--text-dim); }
+    </style>
+</head>
+<body data-theme="dark">
+    <div class="tab-container">
+        <div class="tab-strip" id="tab-strip">
+            <div class="tab active">New Tab</div>
+        </div>
+        <button class="add-tab-btn" onclick="addNewTab()">+</button>
+    </div>
+
+    <div class="toolbar">
+        <div style="display:flex; gap:8px;">
+            <button class="nav-btn" onclick="goBack()">←</button>
+            <button class="nav-btn" onclick="goForward()">→</button>
+            <button class="nav-btn" onclick="reload()">↻</button>
+        </div>
+        <div class="omnibox-container">
+            <input type="text" id="url-input" placeholder="Search or enter URL" spellcheck="false">
+        </div>
+        <div class="utility-bar">
+            <div class="util-icon" title="Extensions" onclick="openExtensions()">
+                <img src="../../assets/ionicons/src/svg/extension-puzzle-outline.svg">
+            </div>
+            <div class="divider"></div>
+            <div class="util-icon" title="Bookmarks" onclick="openBookmarks()">
+                <img src="../../assets/ionicons/src/svg/star-outline.svg">
+            </div>
+            <div class="util-icon" title="Downloads" onclick="openDownloads()">
+                <img src="../../assets/ionicons/src/svg/download-outline.svg">
+            </div>
+            <div class="profile-icon" title="Profile" onclick="openProfile()"></div>
+            <div class="util-icon" title="Menu" onclick="openMenu()">
+                <img src="../../assets/ionicons/src/svg/menu-outline.svg">
+            </div>
+        </div>
+        <button class="nexa-ai-btn" onclick="toggleAI()">NEXA</button>
+    </div>
+
+    <div class="auth-overlay" id="auth-overlay">
+        <div class="login-card">
+            <div class="login-orb"></div>
+            <h2>Welcome to NEXA</h2>
+            <p>Sign in to your Sovereign account</p>
+            <div class="input-group">
+                <label>EMAIL</label>
+                <input type="email" id="login-email" placeholder="email@nexa.ai">
+            </div>
+            <div class="input-group">
+                <label>PASSWORD</label>
+                <input type="password" id="login-pass" placeholder="••••••••">
+            </div>
+            <button class="btn-login" id="login-submit">Sovereign Login</button>
+            <div id="login-error"></div>
+        </div>
+    </div>
+
+    <div class="viewport">
+        <webview id="main-browser" src="file:///C:/Nexa Broswer/src/renderer/nexa-home.html"></webview>
+        <webview id="ai-sidebar" src="ai-popup.html"></webview>
+    </div>
+
+    <div id="more-menu" class="menu-popup">
+        <div class="menu-section">
+            <div class="menu-item" onclick="window.Nexa.call('browser.newTab')">
+                <img src="../../assets/ionicons/src/svg/add-circle-outline.svg"> <span>New tab</span> <small>Ctrl+T</small>
+            </div>
+            <div class="menu-item" onclick="window.Nexa.call('browser.newWindow')">
+                <img src="../../assets/ionicons/src/svg/clone-outline.svg"> <span>New window</span> <small>Ctrl+N</small>
+            </div>
+        </div>
+        <div class="menu-divider"></div>
+        <div class="menu-section">
+            <div class="menu-item" onclick="openBookmarks()">
+                <img src="../../assets/ionicons/src/svg/star-outline.svg"> <span>Bookmarks</span>
+            </div>
+            <div class="menu-item" onclick="openDownloads()">
+                <img src="../../assets/ionicons/src/svg/download-outline.svg"> <span>Downloads</span>
+            </div>
+            <div class="menu-item" onclick="openHistory()">
+                <img src="../../assets/ionicons/src/svg/time-outline.svg"> <span>History</span>
+            </div>
+        </div>
+        <div class="menu-divider"></div>
+        <div class="menu-section">
+            <div class="menu-item" onclick="openExtensions()">
+                <img src="../../assets/ionicons/src/svg/extension-puzzle-outline.svg"> <span>Extensions</span>
+            </div>
+            <div class="menu-item" onclick="openSettings()">
+                <img src="../../assets/ionicons/src/svg/settings-outline.svg"> <span>Settings</span>
+            </div>
+        </div>
+        <div class="menu-divider"></div>
+        <div class="menu-section">
+            <div class="menu-item exit" onclick="window.close()">
+                <img src="../../assets/ionicons/src/svg/log-out-outline.svg"> <span>Exit Nexa Browser</span>
+            </div>
+        </div>
+    </div>
+
+    <div id="profile-menu" class="profile-popup">
+        <div class="profile-header">
+            <div class="profile-avatar-large" id="p-avatar"></div>
+            <div class="profile-info">
+                <div class="p-name" id="p-name">Guest User</div>
+                <div class="p-email" id="p-email">Not signed in</div>
+            </div>
+        </div>
+        <div class="menu-divider"></div>
+        <div class="menu-section">
+            <div class="menu-item" onclick="window.Nexa.call('browser.openView', 'passwords')">
+                <img src="../../assets/ionicons/src/svg/key-outline.svg"> <span>Passwords & Autofill</span>
+            </div>
+            <div class="menu-item" onclick="window.Nexa.call('browser.openView', 'profile-settings')">
+                <img src="../../assets/ionicons/src/svg/person-circle-outline.svg"> <span>Profile Settings</span>
+            </div>
+            <div class="menu-item" id="sync-status">
+                <img src="../../assets/ionicons/src/svg/sync-outline.svg"> <span>Sync is on</span>
+            </div>
+        </div>
+        <div class="menu-divider"></div>
+        <div class="menu-section">
+            <div class="menu-header">Other profiles</div>
+            <div class="menu-item" onclick="window.Nexa.call('browser.switchProfile', 'profile2')">
+                <div class="mini-avatar"></div> <span>Profile 2</span>
+            </div>
+            <div class="menu-item" onclick="window.Nexa.call('browser.createProfile')">
+                <img src="../../assets/ionicons/src/svg/person-add-outline.svg"> <span>Set up a new profile</span> <span class="chevron">›</span>
+            </div>
+            <div class="menu-item" onclick="window.Nexa.call('browser.guestMode')">
+                <img src="../../assets/ionicons/src/svg/help-circle-outline.svg"> <span>Browse as guest</span>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/appwrite@14.0.0"></script>
+    <script src="nexabridge.js"></script>
+    <script>
+        let isUserLoggedIn = false;
+        const urlInput = document.getElementById('url-input');
+        const mainBrowser = document.getElementById('main-browser');
+        const aiSidebar = document.getElementById('ai-sidebar');
+        const authOverlay = document.getElementById('auth-overlay');
+        const moreMenu = document.getElementById('more-menu');
+        const profileMenu = document.getElementById('profile-menu');
+
+        urlInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                let url = urlInput.value;
+                if (!url.startsWith('http')) url = 'https://www.google.com/search?q=' + encodeURIComponent(url);
+                mainBrowser.src = url;
+            }
+        });
+
+        function goBack() { mainBrowser.goBack(); }
+        function goForward() { mainBrowser.goForward(); }
+        function reload() { mainBrowser.reload(); }
+
+        async function toggleAI() { 
+            if (!isUserLoggedIn) {
+                authOverlay.style.display = 'flex';
+                return;
+            }
+            aiSidebar.classList.toggle('hidden'); 
+        }
+
+        document.getElementById('login-submit').onclick = async () => {
+            const email = document.getElementById('login-email').value;
+            const pass = document.getElementById('login-pass').value;
+            const errorDiv = document.getElementById('login-error');
+            if(!email || !pass) return;
+            try {
+                const result = await window.Nexa.login(email, pass);
+                if (result.success) {
+                    isUserLoggedIn = true;
+                    authOverlay.style.display = 'none';
+                    aiSidebar.classList.remove('hidden');
+                } else {
+                    errorDiv.innerText = result.error || "Login failed";
+                    errorDiv.style.display = 'block';
+                }
+            } catch (e) {
+                errorDiv.innerText = "Connection error: " + e.message;
+                errorDiv.style.display = 'block';
+            }
+        };
+
+        function addNewTab() {
+            const strip = document.getElementById('tab-strip');
+            const tab = document.createElement('div');
+            tab.className = 'tab'; tab.innerText = 'New Tab';
+            tab.onclick = function() {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+            };
+            strip.appendChild(tab);
+        }
+
+        function openExtensions() { window.Nexa.call('browser.openView', 'extensions'); }
+        function openBookmarks() { window.Nexa.call('browser.openView', 'bookmarks'); }
+        function openDownloads() { window.Nexa.call('browser.openView', 'downloads'); }
+        function openProfile() { 
+            if (!isUserLoggedIn) {
+                toggleAI(); 
+                return;
+            }
+            window.Nexa.getProfile().then(user => {
+                document.getElementById('p-name').innerText = user.name || "Sovereign User";
+                document.getElementById('p-email').innerText = user.email;
+                profileMenu.style.display = 'block';
+                moreMenu.style.display = 'none';
+            });
+        }
+        function openMenu() { 
+            moreMenu.style.display = 'block'; 
+            profileMenu.style.display = 'none';
+        }
+        function openHistory() { window.Nexa.call('browser.openView', 'history'); }
+        function openSettings() { window.Nexa.call('browser.openView', 'settings'); }
+
+        window.onclick = function(event) {
+            if (!event.target.closest('.util-icon') && 
+                !event.target.closest('.menu-popup') && 
+                !event.target.closest('.profile-popup')) {
+                moreMenu.style.display = 'none';
+                profileMenu.style.display = 'none';
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', async () => {
+            const session = await window.Nexa.checkSession();
+            if (session.success) {
+                isUserLoggedIn = true;
+                aiSidebar.classList.remove('hidden');
+            }
+        });
+    </script>
+</body>
+</html>

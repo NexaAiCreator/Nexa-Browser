@@ -1,0 +1,67 @@
+const { app, BrowserWindow, ipcMain } = require('electron');
+const path = require('path');
+
+let mainWindow = null;
+let loginWindow = null;
+
+function createBrowserWindow() {
+    if (mainWindow) {
+        if (mainWindow.isDestroyed()) {
+            mainWindow = null;
+        } else {
+            mainWindow.focus();
+            return;
+        }
+    }
+    
+    mainWindow = new BrowserWindow({
+        width: 1280, 
+        height: 800,
+        frame: true, 
+        webPreferences: {
+            nodeIntegration: true,
+            contextIsolation: false,
+            webviewTag: true
+        }
+    });
+    mainWindow.loadFile('src/renderer/chrome.html');
+}
+
+function createLoginWindow() {
+    if (loginWindow) {
+        if (loginWindow.isDestroyed()) {
+            loginWindow = null;
+        } else {
+            loginWindow.focus();
+            return;
+        }
+    }
+    
+    loginWindow = new BrowserWindow({
+        width: 450, height: 600,
+        frame: true,
+        alwaysOnTop: true,
+        center: true,
+        webPreferences: {
+            nodeIntegration: true,
+            contextIsolation: false,
+            webviewTag: true
+        }
+    });
+    loginWindow.loadFile('src/renderer/login.html');
+}
+
+app.whenReady().then(() => {
+    createBrowserWindow();
+});
+
+ipcMain.on('open-login', () => {
+    createLoginWindow();
+});
+
+// Prevent app from quitting if only hidden windows are left
+app.on('window-all-closed', (mainWindow) => {
+    if (process.platform !== 'darwin') {
+        app.quit();
+    }
+});

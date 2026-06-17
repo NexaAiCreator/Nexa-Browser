@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nexa Home</title>
+    <style>
+        :root {
+            --bg-dark: #050506;
+            --accent: #8ab4f8;
+            --accent-glow: rgba(138, 180, 248, 0.4);
+            --text-main: #e8eaed;
+            --text-dim: #9aa0a6;
+        }
+
+        body {
+            margin: 0; padding: 0;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            perspective: 1000px;
+        }
+
+        /* NEURAL CANVAS */
+        #neural-canvas {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        /* MAIN CONTENT */
+        .hero {
+            position: relative;
+            z-index: 10;
+            text-align: center;
+            animation: fadeIn 1.5s ease-out;
+            pointer-events: auto;
+        }
+
+        .logo-container {
+            position: relative;
+            display: inline-block;
+            margin-bottom: 30px;
+        }
+
+        .nexa-logo {
+            font-size: 90px;
+            font-weight: 800;
+            letter-spacing: -3px;
+            background: linear-gradient(to right, #fff, var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 0 30px var(--accent-glow));
+            animation: float 4s ease-in-out infinite;
+            margin: 0;
+        }
+
+        .tagline {
+            font-size: 22px;
+            color: var(--text-dim);
+            font-weight: 300;
+            margin-bottom: 40px;
+            opacity: 0.8;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .search-box {
+            display: flex;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 40px;
+            padding: 15px 30px;
+            width: 650px;
+            max-width: 90vw;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            backdrop-filter: blur(15px);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+        }
+
+        .search-box:focus-within {
+            border-color: var(--accent);
+            background: rgba(255, 255, 255, 0.07);
+            transform: scale(1.02);
+            box-shadow: 0 0 30px var(--accent-glow);
+        }
+
+        .search-box input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: white;
+            font-size: 18px;
+            outline: none;
+        }
+
+        .search-box button {
+            background: var(--accent);
+            border: none;
+            color: #000;
+            padding: 10px 25px;
+            border-radius: 25px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .search-box button:hover { transform: scale(1.1); box-shadow: 0 0 15px var(--accent); }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="neural-canvas"></canvas>
+    
+    <div class="hero">
+        <div class="logo-container">
+            <h1 class="nexa-logo">NEXA</h1>
+        </div>
+        <div class="tagline">Sovereign Intelligence. Redefined.</div>
+        <div class="search-box">
+            <input type="text" id="home-search" placeholder="Consult the brain...">
+            <button onclick="doSearch()">Search</button>
+        </div>
+    </div>
+
+    <script>
+        // NEURAL NETWORK ANIMATION
+        const canvas = document.getElementById('neural-canvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+        const particleCount = 80;
+        const connectionDistance = 150;
+        let mouse = { x: null, y: null };
+
+        window.addEventListener('resize', resizeCanvas);
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        resizeCanvas();
+
+        window.addEventListener('mousemove', (e) => {
+            mouse.x = e.x;
+            mouse.y = e.y;
+        });
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.vx = (Math.random() - 0.5) * 0.5;
+                this.vy = (Math.random() - 0.5) * 0.5;
+                this.radius = Math.random() * 2 + 1;
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                if (this.x < 0 || this.x > canvas.width) this.vx *= -1;
+                if (this.y < 0 || this.y > canvas.height) this.vy *= -1;
+            }
+
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(138, 180, 248, 0.5)';
+                ctx.fill();
+            }
+        }
+
+        function init() {
+            particles = [];
+            for (let i = 0; i < particleCount; i++) {
+                particles.push(new Particle());
+            }
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            for (let i = 0; i < particles.length; i++) {
+                const p1 = particles[i];
+                p1.update();
+                p1.draw();
+
+                for (let j = i + 1; j < particles.length; j++) {
+                    const p2 = particles[j];
+                    const dist = Math.hypot(p1.x - p2.x, p1.y - p2.y);
+                    if (dist < connectionDistance) {
+                        ctx.beginPath();
+                        ctx.moveTo(p1.x, p1.y);
+                        ctx.lineTo(p2.x, p2.y);
+                        ctx.strokeStyle = `rgba(138, 180, 248, ${1 - dist / connectionDistance})`;
+                        ctx.lineWidth = 0.5;
+                        ctx.stroke();
+                    }
+                }
+
+                // Connect to mouse
+                if (mouse.x !== null) {
+                    const mDist = Math.hypot(p1.x - mouse.x, p1.y - mouse.y);
+                    if (mDist < 200) {
+                        ctx.beginPath();
+                        ctx.moveTo(p1.x, p1.y);
+                        ctx.lineTo(mouse.x, mouse.y);
+                        ctx.strokeStyle = `rgba(138, 180, 248, ${1 - mDist / 200})`;
+                        ctx.lineWidth = 0.8;
+                        ctx.stroke();
+                    }
+                }
+            }
+            requestAnimationFrame(animate);
+        }
+
+        init();
+        animate();
+
+        function doSearch() {
+            const val = document.getElementById('home-search').value;
+            if (!val) return;
+            const url = val.startsWith('http') ? val : 'https://www.google.com/search?q=' + encodeURIComponent(val);
+            window.location.href = url;
+        }
+        document.getElementById('home-search').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') doSearch();
+        });
+    </script>
+</body>
+</html>
